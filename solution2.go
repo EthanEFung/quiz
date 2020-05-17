@@ -43,8 +43,7 @@ func main() {
 
 	var count int
 	end := func() {
-		fmt.Printf("duration: %v\n", duration)
-		fmt.Printf("Score: %d of %d\n", count, len(tuples))
+		fmt.Printf("\nScore: %d of %d\n", count, len(tuples))
 		os.Exit(0)
 	}
 
@@ -57,18 +56,27 @@ func main() {
 	}
 
 	for _, problem := range quiz {
-		fmt.Println(problem.q)
-		t := time.AfterFunc(duration, end)
-		var attempt string
-		fmt.Scanf("%s\n", &attempt)
-
-		if attempt == problem.a {
-			t.Stop()
-			count++
-		} else {
-			break;
+		t := time.NewTimer(duration)
+		fmt.Printf("%v: ", problem.q)
+		ansChan := make(chan string)
+		go func() {
+			var attempt string
+			fmt.Scanf("%s\n", &attempt)
+			ansChan  <-attempt
+		}()
+		select {
+			case <- t.C:
+				end()
+				return;
+			case attempt := <-ansChan:
+				if attempt == problem.a {
+					count++
+				} else {
+					end()
+				}
 		}
 	}
+	fmt.Printf("Perfect!")
 	end()
 }
 
